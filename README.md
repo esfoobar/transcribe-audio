@@ -4,7 +4,7 @@
 
 - On the folder do `pyenv virtualenv 3.10.8 venv`
 - Activate `pyenv activate venv`
-- Before pip install, install `brew install  portaudio`
+- Before pip install, install `brew install portaudio ffmpeg`
 - Install the packages `pip install -r requirements.txt`
 
 ## Run the script
