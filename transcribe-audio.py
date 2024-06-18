@@ -1,8 +1,11 @@
 import os
 import sys
-import time
+import logging
+import whisper
 from pydub import AudioSegment
-import speech_recognition as sr
+
+# Suppress FP16 warning
+logging.getLogger("whisper").setLevel(logging.ERROR)
 
 
 def convert_to_wav(audio_file_path):
@@ -36,36 +39,29 @@ def split_audio(audio_file_path, chunk_length_ms=60000):
     return chunk_files, chunk_folder
 
 
-def transcribe_audio_chunk(audio_file_path, chunk_index, total_chunks):
-    recognizer = sr.Recognizer()
-    with sr.AudioFile(audio_file_path) as source:
-        audio_data = recognizer.record(source)
-
-    retries = 3
-    for attempt in range(retries):
-        try:
-            transcript = recognizer.recognize_google(audio_data)
-            print(f"Transcription of chunk {chunk_index+1}/{total_chunks} complete.")
-            return transcript
-        except (sr.RequestError, sr.UnknownValueError) as e:
-            print(
-                f"Attempt {attempt + 1} for chunk {chunk_index+1}/{total_chunks} failed: {e}"
-            )
-            if attempt < retries - 1:
-                time.sleep(2)
-            else:
-                raise e
+def transcribe_audio_chunk(model, audio_file_path, chunk_index, total_chunks):
+    try:
+        print(f"Transcribing chunk {chunk_index+1}/{total_chunks}...")
+        result = model.transcribe(audio_file_path)
+        print(f"Transcription of chunk {chunk_index+1}/{total_chunks} complete.")
+        return result["text"]
+    except Exception as e:
+        print(f"Transcription of chunk {chunk_index+1}/{total_chunks} failed: {e}")
+        return None
 
 
 def transcribe_audio(audio_file_path):
     audio_file_path = convert_to_wav(audio_file_path)
     chunk_files, chunk_folder = split_audio(audio_file_path)
 
+    model = whisper.load_model("base")
+
     full_transcript = ""
     total_chunks = len(chunk_files)
     for i, chunk_file in enumerate(chunk_files):
-        transcript = transcribe_audio_chunk(chunk_file, i, total_chunks)
-        full_transcript += transcript + " "
+        transcript = transcribe_audio_chunk(model, chunk_file, i, total_chunks)
+        if transcript:
+            full_transcript += transcript + " "
 
     # Clean up chunk files and folder after processing
     for chunk_file in chunk_files:
