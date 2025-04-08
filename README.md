@@ -10,5 +10,5 @@
 
 ## Run the script
 
-- Do `python ./transcribe_audio.py /path/to/your/audio/file.mp3`
+- Do `python ./transcribe-audio.py /path/to/your/audio/file.mp3`
 - It will save the transription on the Desktop
